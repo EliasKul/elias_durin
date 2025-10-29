@@ -18,7 +18,7 @@ library(lme4)
 library(lmerTest)
 
 #naming where to find files locally on personal computer
-file_path <- "~/DURIN/LI7500/raw_data_licor/raw_data_licor/use_these_files"
+file_path <- "C:/Users/Elias/Documents/master/koding/raw_data_licor"
 
 #here importing those with ly in the name, aka just Lygra site measurements
 all_files <- list.files(path = file_path,
@@ -36,7 +36,6 @@ combined_data <- lapply(all_files,
   df
   }) %>%
   bind_rows()
-
 
 #renaming coloumns
 colnames(combined_data) <- c("relative_time",
