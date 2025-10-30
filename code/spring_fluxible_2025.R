@@ -16,6 +16,8 @@ library(ggforce)
 library(grid)
 library(lme4)
 library(lmerTest)
+library(licoread)
+library(purrr)
 
 #naming where to find files locally on personal computer
 file_path <- "C:/Users/Elias/Documents/master/koding/raw_data_licor"
@@ -27,15 +29,22 @@ all_files <- list.files(path = file_path,
 
 #combininng all of the measurements and adding a coloumn with the filename,
 #this will be the unique ID for each measurement
-combined_data <- lapply(all_files,
-                        function(all_files) {
-  df <- read_table(all_files,
-                   skip = 9,
-                   col_names = FALSE)
-  df$filename <-basename(all_files)
+#combined_data <- lapply(all_files,
+                        #function(all_files) {
+  #df <- read_table(all_files,
+                   #skip = 9,
+                   #col_names = FALSE)
+  #df$filename <-basename(all_files)
+  #df
+  #}) %>%
+  #bind_rows()
+
+combined_data <- map_dfr(all_files, function(all_files) {
+  df <- licoread(all_files)
+  df$filename <- basename(all_files)
   df
-  }) %>%
-  bind_rows()
+}) %>%
+  mutate(plot_info = filename)
 
 #renaming coloumns
 colnames(combined_data) <- c("relative_time",
