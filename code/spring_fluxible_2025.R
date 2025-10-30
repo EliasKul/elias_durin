@@ -26,7 +26,10 @@ file_path <- "C:/Users/Elias/Documents/master/koding/raw_data_licor"
 all_files <- list.files(path = file_path,
                         pattern = "ly",
                         full.names = TRUE)
-
+# Check structure of one example file
+example_df <- read_table(all_files[1], skip = 9, col_names = FALSE, col_types = cols(.default = col_character()))
+names(example_df)
+head(example_df)
 #combininng all of the measurements and adding a coloumn with the filename,
 #this will be the unique ID for each measurement
 #combined_data <- lapply(all_files,
@@ -39,9 +42,12 @@ all_files <- list.files(path = file_path,
   #}) %>%
   #bind_rows()
 
-combined_data <- map_dfr(all_files, function(all_files) {
-  df <- licoread(all_files)
-  df$filename <- basename(all_files)
+combined_data <- map_dfr(all_files, function(file) {
+  df <- read_table(file,
+                   skip = 9,
+                   col_names = FALSE,
+                   col_types = cols(.default = col_character()))
+  df$filename <- basename(file)
   df
 }) %>%
   mutate(plot_info = filename)
