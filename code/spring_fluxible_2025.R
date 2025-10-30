@@ -26,10 +26,7 @@ file_path <- "C:/Users/Elias/Documents/master/koding/raw_data_licor"
 all_files <- list.files(path = file_path,
                         pattern = "ly",
                         full.names = TRUE)
-# Check structure of one example file
-example_df <- read_table(all_files[1], skip = 9, col_names = FALSE, col_types = cols(.default = col_character()))
-names(example_df)
-head(example_df)
+
 #combininng all of the measurements and adding a coloumn with the filename,
 #this will be the unique ID for each measurement
 #combined_data <- lapply(all_files,
@@ -49,25 +46,36 @@ combined_data <- map_dfr(all_files, function(file) {
                    col_types = cols(.default = col_character()))
   df$filename <- basename(file)
   df
-}) %>%
-  mutate(plot_info = filename)
+})
 
+# safer approach: drop unnamed columns
+combined_data <- combined_data[, !is.na(colnames(combined_data))]
 #renaming coloumns
-colnames(combined_data) <- c("relative_time",
-                             "temp",
-                             "pressure",
-                             "aux_input",
-                             "co2_absorptance",
-                             "co2mmol/m3",
-                             "co2mg/m3",
-                             "conc",
-                             "h2o_absorptance",
-                             "h2ommol/m3",
-                             "h2og/m3",
-                             "h2ommol/mol",
-                             "h2o(celsius)",
-                             "cooler_voltage",
-                             "filename")
+colnames(combined_data) <- c(
+                              "tag",                    
+                              "seconds",                
+                              "nanoseconds",            
+                              "ndx",                    
+                              "diag",                   
+                              "remark",                 
+                              "date",                   
+                              "time",                   
+                              "h2o_ppm",                
+                              "co2_ppm",                
+                              "ch4_ppb",                
+                              "cavity_pressure_kPa",    
+                              "cavity_temp_C",          
+                              "laser_phase_p_kPa",      
+                              "laser_temp_C",           
+                              "residual",               
+                              "ring_down_us",           
+                              "thermal_enclosure_C",    
+                              "phase_error",            
+                              "laser_t_shift_C",        
+                              "input_voltage_V",        
+                              "chk",                    
+                              "filename"              
+                              )
 
 #making a copy of the filename coloumn to later split one of them to extract the
 #metadata info in the name
