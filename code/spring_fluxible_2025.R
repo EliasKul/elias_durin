@@ -29,19 +29,10 @@ all_files <- list.files(path = file_path,
 
 #combininng all of the measurements and adding a coloumn with the filename,
 #this will be the unique ID for each measurement
-#combined_data <- lapply(all_files,
-                        #function(all_files) {
-  #df <- read_table(all_files,
-                   #skip = 9,
-                   #col_names = FALSE)
-  #df$filename <-basename(all_files)
-  #df
-  #}) %>%
-  #bind_rows()
 
 combined_data <- map_dfr(all_files, function(file) {
   df <- read_table(file,
-                   skip = 9,
+                   skip = 7,
                    col_names = FALSE,
                    col_types = cols(.default = col_character()))
   df$filename <- basename(file)
@@ -81,6 +72,10 @@ colnames(combined_data) <- c(
 #metadata info in the name
 combined_data <- combined_data %>%
   mutate(plot_info = filename)
+head(combined_data)
+str(combined_data)
+colnames(combined_data)
+sample_n(combined_data, 10)
 
 #cleaning up and naming the new coloumns with the matching plot meta data
 #for each measurement
@@ -90,9 +85,7 @@ combined_data <- combined_data %>%
     into = c("site",
              "habitat",
              "species",
-             "replicat",
-             "measurement",
-             "treatment"),
+             "measuremen"),
     sep= "_",
     fill = "right",
     extra = "merge"
@@ -116,7 +109,7 @@ combined_data <- combined_data %>%
 
 
 #import raw meta data locally, change for other computers
-metadata_flux_measurements <- read_excel("~/DURIN/LI7500/spring_flux_measurements.xlsx")
+metadata_flux_measurements <- read_excel("C:/Users/Elias/Documents/master/koding/raw_data_licor/DURIN_4corners_diurnal_field_cflux_raw_2025.xlsx")
 
 #slight clean-up as the time coloumns came with a weird date.
 metadata_flux_measurements <- metadata_flux_measurements %>%
