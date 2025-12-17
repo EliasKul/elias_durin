@@ -79,80 +79,76 @@ sample_n(combined_data, 10)
 
 #cleaning up and naming the new coloumns with the matching plot meta data
 #for each measurement
-combined_data <- combined_data %>%
-  separate(
-    col= plot_info,
-    into = c("site",
-             "habitat",
-             "species",
-             "measuremen"),
-    sep= "_",
-    fill = "right",
-    extra = "merge"
-  ) %>%
-  mutate(treatment=replace_na(treatment, "r"))
+#combined_data <- combined_data %>%
+ # separate(
+  #  col= plot_info,
+   # into = c("site",
+    #         "habitat",
+     #        "species"),
+    #sep= "_",
+    #fill = "right",
+    #extra = "merge"
+  #) %>%
+  #mutate(treatment=replace_na(treatment, "r"))
 
-combined_data <- combined_data %>%
-  mutate(uniqueID = paste(site,
-                          habitat,
-                          species,
-                          replicat,
-                          measurement,
-                          treatment,
-                          sep = "_"))%>%
-  mutate(plotID = paste(site,
-                          habitat,
-                          species,
-                          replicat,
-                          treatment,
-                          sep = "_"))
+#combined_data <- combined_data %>%
+ # mutate(uniqueID = paste(site,
+  #                        habitat,
+   #                       species,
+    #                      replicat,
+     #                     measurement,
+      #                    treatment,
+       #                   sep = "_"))%>%
+  #mutate(plotID = paste(site,
+   #                       habitat,
+    #                      species,
+     #                     replicat,
+      #                    treatment,
+       #                   sep = "_"))
 
 
 #import raw meta data locally, change for other computers
-metadata_flux_measurements <- read_excel("C:/Users/Elias/Documents/master/koding/raw_data_licor/DURIN_4corners_diurnal_field_cflux_raw_2025.xlsx")
+metadata_flux_measurements <- read_excel("C:/Users/Elias/Documents/master/koding/raw_data_sheets/DURIN_4corners_diurnal_field_cflux_raw_2025.xlsx")
 
 #slight clean-up as the time coloumns came with a weird date.
-metadata_flux_measurements <- metadata_flux_measurements %>%
-  separate(
-    col = startTime,
-    into = c("wrongdate",
-             "start_time"),
-    sep= " ",
-    fill = "right",
-    extra = "merge"
-  ) %>%
-  separate(
-    col = stopTime,
-    into = c("wrongdate",
-             "stop_time"),
-    sep= " ",
-    fill = "right",
-    extra = "merge"
-  ) %>%
-  select(-"wrongdate")
+#metadata_flux_measurements <- metadata_flux_measurements %>%
+  #separate(
+    #col = startTime,
+    #into = c("wrongdate",
+    #         "start_time"),
+   # sep= " ",
+   # fill = "right",
+   # extra = "merge"
+ # ) %>%
+  #separate(
+    #col = stopTime,
+    #into = c("wrongdate",
+     #        "stop_time"),
+    #sep= " ",
+   # fill = "right",
+   # extra = "merge"
+ # ) %>%
+ # select(-"wrongdate")
 
 metadata_flux_measurements <- metadata_flux_measurements %>%
   mutate(site = recode(site,
                        "lygra" ="ly",
-                       "sogndal" ="so"))%>%
+                       "sogndal" ="so",
+                       "senja" ="se",
+                       "kautokeino" ="ka"))%>%
   mutate(habitat = recode(habitat,
                           "forest" ="f",
                           "open" ="o"))%>%
-  mutate(treatment = recode(treatment,
-                            "removal" ="r",
-                            "control" ="c"))%>%
+
   mutate(uniqueID = paste(site,
                           habitat,
                           plot,
-                          replicate,
-                          cover,
-                          treatment,
                           sep = "_"))%>%
   mutate(start = paste(date,
-                       start_time,
+                       licortimestart,
                           sep = " "))%>%
   mutate(stop = paste(date,
-                       stop_time,
+                       licortimestop,
                        sep = " "))
 
 metadata_flux_measurements$start <- as.POSIXct(metadata_flux_measurements$start,
@@ -160,13 +156,28 @@ metadata_flux_measurements$start <- as.POSIXct(metadata_flux_measurements$start,
 metadata_flux_measurements$stop <- as.POSIXct(metadata_flux_measurements$stop,
                                                format = "%Y-%m-%d %H:%M:%S")
 
+combined_data <- combined_data %>%
+  mutate(datetime = paste(date,
+                          time,
+                          sep = " "))
+
+combined_data$datetime <- as.POSIXct(combined_data$datetime,
+                                     format = "%Y-%m-%d %H:%M:%S")
+
+metadata_flux_measurements <- metadata_flux_measurements %>%
+  mutate(
+    stop = if_else(
+      stop < start,
+      stop + lubridate::days(1),
+      stop
+    )
+  )
 
 #combine measurements
 
 raw_combined_meta_logger <- combined_data %>%
   left_join(metadata_flux_measurements,
-            by = "uniqueID",
-            relationship = "many-to-many")
+            join_by(datetime >= start, datetime <= stop))
 
 raw_combined_meta_logger <- raw_combined_meta_logger %>%
   mutate(datetime = start + relative_time)
