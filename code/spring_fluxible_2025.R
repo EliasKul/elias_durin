@@ -1,6 +1,8 @@
 #install.packages("devtools")
 devtools::install_github("plant-functional-trait-course/fluxible")
 
+#må finne ut av hvilke par og reco verdier jeg skal velge og sjekke ut y_lim upper og lower
+
 library(devtools)
 library(fluxible)
 library(tidyverse)
@@ -978,53 +980,59 @@ plot_gpp_senja
 
 #combined
 
-south_spring_gpp <- bind_rows(gpp_lygra, gpp_sogndal)
-south_spring_gpp <- south_spring_gpp %>%
+diurnal_gpp <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
+diurnal_gpp <- diurnal_gpp %>%
   filter(type == "GPP") %>%
   filter(f_flux <= 0) %>%
   filter(f_flux >= -60)
 
-south_spring_gpp$PAR1 <- as.numeric(south_spring_gpp$PAR1)
-south_spring_gpp$PAR2 <- as.numeric(south_spring_gpp$PAR2)
-south_spring_gpp$PAR3 <- as.numeric(south_spring_gpp$PAR3)
-south_spring_gpp$NDVI <- (south_spring_gpp$NDVI1+south_spring_gpp$NDVI2)/2
-south_spring_gpp$soilmoisture <- (south_spring_gpp$soilmoist1 + south_spring_gpp$soilmoist2 + south_spring_gpp$soilmoist3)/3
-south_spring_gpp$PAR <- (south_spring_gpp$PAR1 + south_spring_gpp$PAR2 + south_spring_gpp$PAR3)/3
+#må fikse med na values
+diurnal_gpp$PAR1 <- as.numeric(diurnal_gpp$PAR1)
+diurnal_gpp$PAR2 <- as.numeric(diurnal_gpp$PAR2)
+diurnal_gpp$PAR3 <- as.numeric(diurnal_gpp$PAR3)
+diurnal_gpp$NDVI1 <- as.numeric(diurnal_gpp$NDVI1)
+diurnal_gpp$NDVI2 <- as.numeric(diurnal_gpp$NDVI2)
+diurnal_gpp$soilmoist1 <- as.numeric(diurnal_gpp$soilmoist1)
+diurnal_gpp$soilmoist2 <- as.numeric(diurnal_gpp$soilmoist2)
+diurnal_gpp$soilmoist3 <- as.numeric(diurnal_gpp$soilmoist3)
+diurnal_gpp$NDVI <- (diurnal_gpp$NDVI1+diurnal_gpp$NDVI2)/2 
+diurnal_gpp$soilmoisture <- (diurnal_gpp$soilmoist1 + diurnal_gpp$soilmoist2 + diurnal_gpp$soilmoist3)/3 
+diurnal_gpp$PAR <- (diurnal_gpp$PAR1 + diurnal_gpp$PAR2 + diurnal_gpp$PAR3)/3
 
-plot.ndvi <- south_spring_gpp %>%
+plot.ndvi <- diurnal_gpp %>%
   drop_na(NDVI) %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x=NDVI, y=f_flux, colour=habitat.x))+
+  ggplot(aes(x=NDVI, y=f_flux, colour=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
-  facet_wrap(~site.x)
+  facet_wrap(~site)
 
 plot.ndvi
 
-plot.temp <- south_spring_gpp %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x=f_temp_air_ave, y=f_flux, colour=habitat.x))+
+plot.temp <- diurnal_gpp %>%
+  ggplot(aes(x=f_temp_air_ave, y=f_flux, colour=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
-  facet_wrap(~site.x)
+  facet_wrap(~site)
 
 plot.temp
+
 site_names <- c('ly' = "Lygra (coastal)",
-                   'so' = "Sogndal (continental)")
+                   'so' = "Sogndal (continental)",
+                'se' = "Senja (coastal)",
+                'ka' = "Kautokeino (continental")
 habitats <- c('f' = "Forest",
               'o' = "Open")
 
 
-plot.soilmoist <- south_spring_gpp %>%
+plot.soilmoist <- diurnal_gpp %>%
   drop_na(soilmoisture) %>%
-  filter(treatment.x == "c")%>%
   ggplot(aes(x=soilmoisture,
              y=f_flux,
-             colour=habitat.x,
-             fill=habitat.x))+
+             colour=habitat,
+             fill=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
-  facet_wrap(~site.x, labeller = as_labeller(site_names)) +
+  facet_wrap(~site, labeller = as_labeller(site_names)) +
   scale_fill_manual(values = c("f" ="#854836", #Forest
                                "o" ="#FFB22C" #Open
                                ),labels= habitats)+
@@ -1049,22 +1057,20 @@ ggsave("gpp_soilmoist_site_habitat.png",
        height = 6,
        dpi = 300)
 
-plot.PAR <- south_spring_gpp %>%
+plot.PAR <- diurnal_gpp %>%
   drop_na(PAR) %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x=PAR, y=f_flux, colour=habitat.x))+
+  ggplot(aes(x=PAR, y=f_flux, colour=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
-  facet_wrap(~site.x)
+  facet_wrap(~site)
 
 plot.PAR
 
-plot_gpp_site_habitat <- south_spring_gpp %>%
+plot_gpp_site_habitat <- diurnal_gpp %>%
  # filter(type == "GPP") %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x = site.x,
+  ggplot(aes(x = site,
              y = f_flux,
-             colour=habitat.x)) +
+             colour=habitat)) +
   geom_sina(size = 3) +
   geom_violin(fill = NA)+
   stat_summary(
@@ -1074,11 +1080,13 @@ plot_gpp_site_habitat <- south_spring_gpp %>%
     color = "black",
     fatten = 1,
     position = position_dodge(width = 0.9),
-    aes(group = interaction(habitat.x,
-                            site.x))
+    aes(group = interaction(habitat,
+                            site))
   ) +
   scale_x_discrete(labels= c("Lygra (coastal)",
-                             "Sogndal (continental)"))+
+                             "Sogndal (continental)",
+                             "Senja (coastal)",
+                             "Kautokeino (continental"))+
   scale_colour_manual(values = c("#854836", #Forest
                                    "#FFB22C" #Open
   ),labels= c("Forest",
@@ -1099,10 +1107,9 @@ ggsave("plot_gpp_site_habitat.png",
        height = 6,
        dpi = 300)
 
-plot_gpp <- south_spring_gpp %>%
+plot_gpp <- diurnal_gpp %>%
   # filter(type == "GPP") %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x = site.x, y = f_flux)) +
+  ggplot(aes(x = site, y = f_flux)) +
   geom_sina(size = 2) +
   geom_violin(fill = NA)+
   stat_summary(
@@ -1112,39 +1119,38 @@ plot_gpp <- south_spring_gpp %>%
     color = "black",
     fatten = 1,
     position = position_dodge(width = 0.9),
-    aes(group = interaction(site.x))
+    aes(group = interaction(site))
   )#+
 # facet_wrap(~species)
 plot_gpp
 
-plot_gpp <- south_spring_gpp %>%
+#plot_gpp <- diurnal_gpp %>%
   # filter(type == "GPP") %>%
-  filter(treatment.x == "c")%>%
-  ggplot(aes(x = habitat.x, y = f_flux, colour = species)) +
-  geom_sina(size = 3) +
-  geom_violin(fill = NA)+
-  stat_summary(
-    fun = mean,
-    geom = "crossbar",
+  #ggplot(aes(x = habitat, y = f_flux, colour = species)) +
+  #geom_sina(size = 3) +
+  #geom_violin(fill = NA)+
+  #stat_summary(
+    #fun = mean,
+   # geom = "crossbar",
     #  width = 1,
-    color = "grey",
-    fatten = 1,
-    position = position_dodge(width = 0.9),
-    aes(group = interaction(habitat.x, species))
-  )#+
+    #color = "grey",
+    #fatten = 1,
+    #position = position_dodge(width = 0.9),
+    #aes(group = interaction(habitat, species))
+  #)#+
 # facet_wrap(~species)
-plot_gpp
+#plot_gpp
 
-mod.lm <- lm(f_flux ~site.x*habitat.x, data = south_spring_gpp)
+mod.lm <- lm(f_flux ~site*habitat, data = diurnal_gpp)
 anova(mod.lm)
 
-mod.lmer <- lmer(f_flux ~site.x*habitat.x + (1|species/replicate),
-                 data = south_spring_gpp)
+#mod.lmer <- lmer(f_flux ~site*habitat + (1|species/replicate),
+ #                data = diurnal_gpp)
 
-anova(mod.lmer)
+#anova(mod.lmer)
 
-mod2.lm <- lm(f_flux ~site.x, data = south_spring_gpp)
+mod2.lm <- lm(f_flux ~site, data = diurnal_gpp)
 anova(mod2.lm)
 
-mod2.lm <- lm(f_flux ~site.x *habitat.x*species, data = south_spring_gpp)
-anova(mod2.lm)
+#mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_gpp)
+#anova(mod2.lm)
