@@ -250,16 +250,16 @@ flags_lygra <- flux_quality(
   instr_error = 5
 )
 
-flags_lygra |>
-  flux_plot(
-    f_conc = co2_ppm,
-    f_datetime = datetime,
-    print_plot = FALSE,
-    output = "pdfpages",
-    f_plotname = "plots_lygra_evaluation_2",
-    f_ylim_upper = 600,
-    f_ylim_lower = 400
-  )
+#flags_lygra |>
+  #flux_plot(
+    #f_conc = co2_ppm,
+    #f_datetime = datetime,
+    #print_plot = FALSE,
+    #output = "pdfpages",
+    #f_plotname = "plots_lygra_evaluation_2",
+    #f_ylim_upper = 600,
+    #f_ylim_lower = 400
+  #)
 
 
 flags_lygra$cavity_temp_C <- as.numeric(flags_lygra$cavity_temp_C)
@@ -470,16 +470,16 @@ flags_sogndal <- flux_quality(
   instr_error = 5
 )
 
-flags_sogndal |>
-  flux_plot(
-    f_conc = co2_ppm,
-    f_datetime = datetime,
-    print_plot = FALSE,
-    output = "pdfpages",
-    f_plotname = "plots_sogndal_evaluation_2",
-    f_ylim_upper = 600,
-    f_ylim_lower = 400
-  )
+#flags_sogndal |>
+  #flux_plot(
+    #f_conc = co2_ppm,
+    #f_datetime = datetime,
+    #print_plot = FALSE,
+    #output = "pdfpages",
+    #f_plotname = "plots_sogndal_evaluation_2",
+    #f_ylim_upper = 600,
+    #f_ylim_lower = 400
+  #)
 
 
 flags_sogndal$cavity_temp_C <- as.numeric(flags_sogndal$cavity_temp_C)
@@ -682,16 +682,16 @@ flags_kauto <- flux_quality(
   instr_error = 5
 )
 
-flags_kauto |>
-  flux_plot(
-    f_conc = co2_ppm,
-    f_datetime = datetime,
-    print_plot = FALSE,
-    output = "pdfpages",
-    f_plotname = "plots_kauto_evaluation_2",
-    f_ylim_upper = 600,
-    f_ylim_lower = 400
-  )
+#flags_kauto |>
+  #flux_plot(
+    #f_conc = co2_ppm,
+    #f_datetime = datetime,
+    #print_plot = FALSE,
+    #output = "pdfpages",
+    #f_plotname = "plots_kauto_evaluation_2",
+    #f_ylim_upper = 600,
+    #f_ylim_lower = 400
+  #)
 
 
 flags_kauto$cavity_temp_C <- as.numeric(flags_kauto$cavity_temp_C)
@@ -893,16 +893,16 @@ flags_senja <- flux_quality(
   instr_error = 5
 )
 
-flags_senja |>
-  flux_plot(
-    f_conc = co2_ppm,
-    f_datetime = datetime,
-    print_plot = FALSE,
-    output = "pdfpages",
-    f_plotname = "plots_senja_evaluation_2",
-    f_ylim_upper = 600,
-    f_ylim_lower = 400
-  )
+#flags_senja |>
+  #flux_plot(
+    #f_conc = co2_ppm,
+    #f_datetime = datetime,
+    #print_plot = FALSE,
+    #output = "pdfpages",
+    #f_plotname = "plots_senja_evaluation_2",
+    #f_ylim_upper = 600,
+    #f_ylim_lower = 400
+  #)
 
 
 flags_senja$cavity_temp_C <- as.numeric(flags_senja$cavity_temp_C)
@@ -998,6 +998,11 @@ diurnal_gpp$soilmoist3 <- as.numeric(diurnal_gpp$soilmoist3)
 diurnal_gpp$NDVI <- (diurnal_gpp$NDVI1+diurnal_gpp$NDVI2)/2 
 diurnal_gpp$soilmoisture <- (diurnal_gpp$soilmoist1 + diurnal_gpp$soilmoist2 + diurnal_gpp$soilmoist3)/3 
 diurnal_gpp$PAR <- (diurnal_gpp$PAR1 + diurnal_gpp$PAR2 + diurnal_gpp$PAR3)/3
+
+diurnal_gpp <- diurnal_gpp %>%
+  separate(uniqueID, into = c("part1", "part2", "species", "rep_num", "part5"), sep = "_", remove = FALSE) %>%
+  mutate(replicate = paste0(species, "_", rep_num)) %>%
+  select(-part1, -part2, -part5, -rep_num)
 
 plot.ndvi <- diurnal_gpp %>%
   drop_na(NDVI) %>%
@@ -1120,37 +1125,90 @@ plot_gpp <- diurnal_gpp %>%
     fatten = 1,
     position = position_dodge(width = 0.9),
     aes(group = interaction(site))
-  )#+
-# facet_wrap(~species)
+  )+
+ facet_wrap(~species)
 plot_gpp
 
-#plot_gpp <- diurnal_gpp %>%
-  # filter(type == "GPP") %>%
-  #ggplot(aes(x = habitat, y = f_flux, colour = species)) +
-  #geom_sina(size = 3) +
-  #geom_violin(fill = NA)+
-  #stat_summary(
-    #fun = mean,
-   # geom = "crossbar",
-    #  width = 1,
-    #color = "grey",
-    #fatten = 1,
-    #position = position_dodge(width = 0.9),
-    #aes(group = interaction(habitat, species))
-  #)#+
-# facet_wrap(~species)
-#plot_gpp
+plot_gpp <- diurnal_gpp %>%
+   filter(type == "GPP") %>%
+  ggplot(aes(x = habitat, y = f_flux, colour = species)) +
+  geom_sina(size = 3) +
+  geom_violin(fill = NA)+
+  stat_summary(
+    fun = mean,
+    geom = "crossbar",
+      width = 1,
+    color = "grey",
+    fatten = 1,
+    position = position_dodge(width = 0.9),
+    aes(group = interaction(habitat, species))
+  )+
+ facet_wrap(~species)
+plot_gpp
 
-mod.lm <- lm(f_flux ~site*habitat, data = diurnal_gpp)
+diurnal_nee <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
+diurnal_nee <- diurnal_nee %>%
+  filter(type == "NEE") |> 
+  filter(f_flux >= -50) |> 
+  filter(f_flux <= 100)
+
+#må fikse med na values
+diurnal_nee$PAR1 <- as.numeric(diurnal_nee$PAR1)
+diurnal_nee$PAR2 <- as.numeric(diurnal_nee$PAR2)
+diurnal_nee$PAR3 <- as.numeric(diurnal_nee$PAR3)
+diurnal_nee$NDVI1 <- as.numeric(diurnal_nee$NDVI1)
+diurnal_nee$NDVI2 <- as.numeric(diurnal_nee$NDVI2)
+diurnal_nee$soilmoist1 <- as.numeric(diurnal_nee$soilmoist1)
+diurnal_nee$soilmoist2 <- as.numeric(diurnal_nee$soilmoist2)
+diurnal_nee$soilmoist3 <- as.numeric(diurnal_nee$soilmoist3)
+diurnal_nee$NDVI <- (diurnal_nee$NDVI1+diurnal_nee$NDVI2)/2 
+diurnal_nee$soilmoisture <- (diurnal_nee$soilmoist1 + diurnal_nee$soilmoist2 + diurnal_nee$soilmoist3)/3 
+diurnal_nee$PAR <- (diurnal_nee$PAR1 + diurnal_nee$PAR2 + diurnal_nee$PAR3)/3
+
+diurnal_nee <- diurnal_nee %>%
+  separate(uniqueID, into = c("part1", "part2", "species", "rep_num", "part5"), sep = "_", remove = FALSE) %>%
+  mutate(replicate = paste0(species, "_", rep_num)) %>%
+  select(-part1, -part2, -part5, -rep_num)
+
+plot_session <- diurnal_nee %>%
+  # filter(type == "GPP") %>%
+  ggplot(aes(x = session, y = f_flux, color = site, linetype = habitat)) +
+  geom_jitter() +
+  geom_smooth(se = FALSE) +
+  scale_linetype_manual(values = c(
+    "o" = "solid",
+    "f" = "dashed"
+  ))
+plot_session
+
+mod.lm <- lm(f_flux ~site*habitat*session, data = diurnal_gpp)
 anova(mod.lm)
 
-#mod.lmer <- lmer(f_flux ~site*habitat + (1|species/replicate),
- #                data = diurnal_gpp)
+#legg inn species og replicate så du kan bruke i mod.lmer, legg in emmeans for å teste ting mot hverandre
+#plot som følger sessions på x akse, gpp på y akse. Forskjell mellom sites. Kan splitte opp for site og habitat og ha alle sammen
+mod.lmer <- lmer(f_flux ~site*habitat + (1|session),
+                 data = diurnal_gpp)
 
-#anova(mod.lmer)
+anova(mod.lmer)
 
 mod2.lm <- lm(f_flux ~site, data = diurnal_gpp)
 anova(mod2.lm)
 
-#mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_gpp)
-#anova(mod2.lm)
+mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_gpp)
+anova(mod2.lm)
+
+mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_nee)
+anova(mod2.lm)
+
+#gtable, lagre som en tabell med p-verdier åsånn
+#ggsave, lagre figurer som filer
+
+#ggsave("plot.png/jpeg",
+#width = 14,
+#height = 6,
+#dpi = 300)
+
+#facet_grid(siteID ~ habitat,
+#scales = "free_x",
+#space = "free_x)
+
