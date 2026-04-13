@@ -241,7 +241,6 @@ slopes_lygra <- flux_fitting(
 )
 
 
-
 flags_lygra <- flux_quality(
   slopes_df = slopes_lygra,
   f_conc = co2_ppm,
@@ -1070,6 +1069,10 @@ plot.PAR <- diurnal_gpp %>%
   facet_wrap(~site)
 
 plot.PAR
+ggsave("plot.PAR.png",
+       width = 7,
+       height = 6,
+       dpi = 300)
 
 plot_gpp_site_habitat <- diurnal_gpp %>%
  # filter(type == "GPP") %>%
@@ -1143,8 +1146,13 @@ plot_gpp <- diurnal_gpp %>%
     position = position_dodge(width = 0.9),
     aes(group = interaction(habitat, species))
   )+
- facet_wrap(~species)
+ facet_wrap(~site)
 plot_gpp
+ggsave("plot_gpp.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
 
 diurnal_nee <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
 diurnal_nee <- diurnal_nee %>%
@@ -1186,9 +1194,12 @@ anova(mod.lm)
 
 #legg inn species og replicate så du kan bruke i mod.lmer, legg in emmeans for å teste ting mot hverandre
 #plot som følger sessions på x akse, gpp på y akse. Forskjell mellom sites. Kan splitte opp for site og habitat og ha alle sammen
-mod.lmer <- lmer(f_flux ~site*habitat + (1|session),
+mod.lmer <- lmer(f_flux ~site*habitat*species + (1|session),
                  data = diurnal_gpp)
-
+#splitte opp uniqueid så du får plotid, men beholde uniqueid (replicate er for å teste om det har skjedd en tilfeldig effekt fordi plottene er nærme for hverande, så vi tar høyde for det.)
+mod.lmer2 <- lmer(f_flux ~site*habitat*species*session + (1|replicate),
+                 data = diurnal_gpp)
+anova(mod.lmer2)
 anova(mod.lmer)
 
 mod2.lm <- lm(f_flux ~site, data = diurnal_gpp)
@@ -1203,12 +1214,51 @@ anova(mod2.lm)
 #gtable, lagre som en tabell med p-verdier åsånn
 #ggsave, lagre figurer som filer
 
-#ggsave("plot.png/jpeg",
-#width = 14,
-#height = 6,
-#dpi = 300)
+ggsave("plot_session.png",
+width = 14,
+height = 6,
+dpi = 300)
+
 
 #facet_grid(siteID ~ habitat,
 #scales = "free_x",
 #space = "free_x)
 
+diurnal_combined <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
+diurnal_combined <- diurnal_combined %>%
+  filter(f_flux >= -50) |> 
+  filter(f_flux <= 100)
+
+#må fikse med na values
+diurnal_combined$PAR1 <- as.numeric(diurnal_combined$PAR1)
+diurnal_combined$PAR2 <- as.numeric(diurnal_combined$PAR2)
+diurnal_combined$PAR3 <- as.numeric(diurnal_combined$PAR3)
+diurnal_combined$NDVI1 <- as.numeric(diurnal_combined$NDVI1)
+diurnal_combined$NDVI2 <- as.numeric(diurnal_combined$NDVI2)
+diurnal_combined$soilmoist1 <- as.numeric(diurnal_combined$soilmoist1)
+diurnal_combined$soilmoist2 <- as.numeric(diurnal_combined$soilmoist2)
+diurnal_combined$soilmoist3 <- as.numeric(diurnal_combined$soilmoist3)
+diurnal_combined$NDVIm <- rowMeans(
+  diurnal_combined[, c("NDVI1", "NDVI2")],
+  na.rm = TRUE
+)
+
+diurnal_combined$soilmoisturem <- rowMeans(
+  diurnal_combined[, c("soilmoist1", "soilmoist2", "soilmoist3")],
+  na.rm = TRUE
+)
+
+diurnal_combined$PARm <- rowMeans(
+  diurnal_combined[, c("PAR1", "PAR2", "PAR3")],
+  na.rm = TRUE
+)
+
+
+diurnal_combined <- diurnal_combined %>%
+  separate(uniqueID, into = c("part1", "part2", "species", "rep_num", "part5"), sep = "_", remove = FALSE) %>%
+  mutate(replicate = paste0(species, "_", rep_num)) %>%
+  select(-part1, -part2, -part5, -rep_num)
+
+install.packages("writexl")
+library(writexl)
+write_xlsx(diurnal_combined, "C:/Users/Elias/Documents/master/koding/clean_data/DURIN_clean_4corners_diurnal_field_cflux_2025.xlsx")
