@@ -20,6 +20,7 @@ library(lme4)
 library(lmerTest)
 library(licoread)
 library(purrr)
+library(emmeans)
 
 #naming where to find files locally on personal computer
 file_path <- "C:/Users/Elias/Documents/master/koding/raw_data_licor"
@@ -1023,7 +1024,7 @@ plot.temp
 site_names <- c('ly' = "Lygra (coastal)",
                    'so' = "Sogndal (continental)",
                 'se' = "Senja (coastal)",
-                'ka' = "Kautokeino (continental")
+                'ka' = "Kautokeino (continental)")
 habitats <- c('f' = "Forest",
               'o' = "Open")
 
@@ -1050,7 +1051,7 @@ plot.soilmoist <- diurnal_gpp %>%
     strip.background = element_blank()
   ) +
   labs(x= "Soil moisture (%)",
-       y="GPP",
+       y="GPP (Gross Primary Productivity)",
        color= "",
        fill="")
 
@@ -1066,9 +1067,27 @@ plot.PAR <- diurnal_gpp %>%
   ggplot(aes(x=PAR, y=f_flux, colour=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
-  facet_wrap(~site)
+  facet_wrap(~site, labeller = as_labeller(site_names)) +
+  scale_fill_manual(values = c("f" ="#854836", #Forest
+                               "o" ="#FFB22C" #Open
+  ),labels= habitats)+
+  scale_colour_manual(values = c("f" ="#854836", #Forest
+                                 "o" ="#FFB22C" #Open
+  ),labels=habitats)+
+  
+  theme_bw()+
+  theme(
+    strip.text = element_text(size = 12),
+    strip.background = element_blank()
+  ) +
+  labs(x= "PAR (Photosynthetic Active Radiation)",
+       y="GPP (Gross Primary Productivity)",
+       color= "",
+       fill="")
 
 plot.PAR
+
+
 ggsave("plot.PAR.png",
        width = 7,
        height = 6,
@@ -1094,7 +1113,7 @@ plot_gpp_site_habitat <- diurnal_gpp %>%
   scale_x_discrete(labels= c("Lygra (coastal)",
                              "Sogndal (continental)",
                              "Senja (coastal)",
-                             "Kautokeino (continental"))+
+                             "Kautokeino (continental)"))+
   scale_colour_manual(values = c("#854836", #Forest
                                    "#FFB22C" #Open
   ),labels= c("Forest",
@@ -1105,7 +1124,7 @@ plot_gpp_site_habitat <- diurnal_gpp %>%
     strip.background = element_blank()
   ) +
   labs(x= "",
-       y="GPP",
+       y="GPP (Gross Primary Productivity)",
        color= "")
 
 plot_gpp_site_habitat
@@ -1146,7 +1165,27 @@ plot_gpp <- diurnal_gpp %>%
     position = position_dodge(width = 0.9),
     aes(group = interaction(habitat, species))
   )+
- facet_wrap(~site)
+ facet_wrap(~site)+
+  scale_color_manual (values = c(
+    "cv" = "#f768a1",
+    "en" = "#238b45",
+    "vm" = "#225ea8",
+    "vv" = "#d7301f"
+  ),
+  labels = c(
+    "cv" = "Calluna vulgaris",
+    "en" = "Empetrum nigrum",
+    "vm" = "Vaccinium myrtillus",
+    "vv" = "Vaccinium vitis-idaea"
+  )) +
+  scale_x_discrete(labels = c(
+    "f" = "Forest",
+    "o" = "Open"
+  ))+
+  labs(x= "Habitat",
+       y="GPP (Gross Primary Productivity)",
+       color= "",
+       fill="")
 plot_gpp
 ggsave("plot_gpp.png",
        width = 8,
@@ -1186,8 +1225,37 @@ plot_session <- diurnal_nee %>%
   scale_linetype_manual(values = c(
     "o" = "solid",
     "f" = "dashed"
-  ))
+  ),
+  labels = c(
+    "f" = "Forest",
+    "o" = "Open"
+  ))+   
+  scale_color_manual (values = c(
+    "ka" = "#c2e699",
+    "ly" = "#ae017e",
+    "se" = "#41b6c4",
+    "so" = "#fc8d59"
+  ),
+  labels = c(
+    "ka" = "Kautokeino",
+    "ly" = "Lygra",
+    "se" = "Senja",
+    "so" = "Sogndal"
+  )) +
+  scale_x_continuous(
+    breaks = c(1, 2, 3, 4),
+    labels = c("Morning", "Midday", "Evening", "Night")
+  ) +
+  labs(x= "session",
+       y="GPP (Gross Primary Productivity)",
+       color= "",
+       fill="")
 plot_session
+
+ggsave("plot_session.png",
+       width = 14,
+       height = 6,
+       dpi = 300)
 
 mod.lm <- lm(f_flux ~site*habitat*session, data = diurnal_gpp)
 anova(mod.lm)
@@ -1211,14 +1279,147 @@ anova(mod2.lm)
 mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_nee)
 anova(mod2.lm)
 
+mod_simple <- lmer(f_flux ~ site * habitat * session + (1|replicate),
+                   data = diurnal_gpp)
+
+mod.lmer3 <- lmer(f_flux ~ PAR*soilmoisture*habitat*site + (1|replicate),
+                  data = diurnal_gpp)
+anova(mod.lmer3)
+anova(mod_simple)
+
+#mod_simple table
+library(broom.mixed)
+
+model_table <- tidy(mod_simple, effects = "fixed") %>%
+  mutate(
+    significance = case_when(
+      p.value < 0.001 ~ "***",
+      p.value < 0.01  ~ "**",
+      p.value < 0.05  ~ "*",
+      p.value < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+model_table <- model_table %>%
+  mutate(
+    estimate = round(estimate, 3),
+    std.error = round(std.error, 3),
+    p.value = round(p.value, 3)
+  )
+
+model_table
+
+library(flextable)
+library(officer)
+
+ft <- flextable(model_table) %>%
+  autofit()
+
+doc <- read_docx() %>%
+  body_add_flextable(ft)
+
+print(doc, target = "model_table.docx")
+write.csv(model_table, "model_table.csv", row.names = FALSE)
+
+ggplot(diurnal_gpp %>% drop_na(PAR),
+       aes(x = PAR,
+           y = f_flux,
+           colour = habitat)) +
+  
+  geom_point(alpha = 0.25) +
+  
+  geom_smooth(method = "lm",
+              formula = y ~ x * habitat,
+              se = TRUE) +
+  
+  facet_wrap(~site) +
+  
+  theme_bw() +
+  
+  labs(x = "PAR",
+       y = "GPP",
+       colour = "Habitat")
+
+
+#mod_simple figure attempt
+diurnal_gpp$session <- as.factor(diurnal_gpp$session)
+
+mod_simple <- lmer(f_flux ~ site * habitat * session + (1|replicate),
+                   data = diurnal_gpp)
+emm <- emmeans(mod_simple, ~ site * habitat * session)
+emm_df <- as.data.frame(emm)
+ggplot() +
+  geom_point(data = diurnal_gpp,
+             aes(x = session, y = f_flux),
+             alpha = 0.2) +
+  geom_point(data = emm_df,
+             aes(x = session, y = emmean, color = habitat),
+             position = position_dodge(width = 0.3),
+             size = 3,) +
+  geom_errorbar(data = emm_df,
+                aes(x = session,
+                    ymin = emmean - SE,
+                    ymax = emmean + SE,
+                    color = habitat),
+                position = position_dodge(width = 0.3),
+                width = 0.2) +
+  facet_wrap(~site, labeller = as_labeller(site_names)) +
+  scale_fill_manual(values = c("f" ="#854836", #Forest
+                               "o" ="#FFB22C" #Open
+  ),labels= habitats)+
+  scale_colour_manual(values = c("f" ="#854836", #Forest
+                                 "o" ="#FFB22C" #Open
+  ),labels=habitats)+
+  
+  theme_bw()+
+  theme(
+    strip.text = element_text(size = 12),
+    strip.background = element_blank()
+  ) +
+  scale_x_discrete(
+    breaks = c(1, 2, 3, 4),
+    labels = c("Morning", "Midday", "Evening", "Night")
+  ) +
+  labs(x= "session",
+       y="GPP (Gross Primary Productivity)",
+       color= "",
+       fill="")
+  #facet_wrap(~ site) +
+  #theme_bw()
+ggsave("mod_simple_figure.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+library(multcomp)
+cld <- cld(emm,
+           Letters = letters,
+           adjust = "tukey")
+cld_df <- as.data.frame(cld)
+ggplot(cld_df, aes(x = session, y = emmean,
+                   color = habitat,
+                   group = habitat)) +
+  geom_point(size = 3) +
+  geom_line() +
+  geom_text(aes(label = .group),
+            vjust = -1) +
+  facet_wrap(~ site) +
+  theme_bw()
+
+#mod.lmer2 figure attempt
+emm <- emmeans(mod.lmer2, ~ site * habitat * session)
+emm_df <- as.data.frame(emm)
+
+ggplot(emm_df, aes(x = session, y = emmean, color = site)) +
+  geom_line(size = 1) +
+  geom_point() +
+  facet_wrap(~ habitat) +
+  geom_errorbar(aes(ymin = lower.CL, ymax = upper.CL), width = 0.2) +
+  labs(y = "GPP", x = "Time of day") +
+  theme_bw()
+
 #gtable, lagre som en tabell med p-verdier åsånn
 #ggsave, lagre figurer som filer
-
-ggsave("plot_session.png",
-width = 14,
-height = 6,
-dpi = 300)
-
 
 #facet_grid(siteID ~ habitat,
 #scales = "free_x",
