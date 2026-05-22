@@ -1094,7 +1094,7 @@ ggsave("plot.PAR.png",
        dpi = 300)
 
 plot_gpp_site_habitat <- diurnal_gpp %>%
- # filter(type == "GPP") %>%
+  #filter(type == "GPP") %>%
   ggplot(aes(x = site,
              y = f_flux,
              colour=habitat)) +
@@ -1247,7 +1247,7 @@ plot_session <- diurnal_nee %>%
     labels = c("Morning", "Midday", "Evening", "Night")
   ) +
   labs(x= "session",
-       y="GPP (Gross Primary Productivity)",
+       y="NEE (Net Ecosystem Exchange)",
        color= "",
        fill="")
 plot_session
@@ -1343,9 +1343,10 @@ ggplot(diurnal_gpp %>% drop_na(PAR),
 
 #mod_simple figure attempt
 diurnal_gpp$session <- as.factor(diurnal_gpp$session)
-
+options(contrasts = c("contr.sum", "contr.poly"))
 mod_simple <- lmer(f_flux ~ site * habitat * session + (1|replicate),
                    data = diurnal_gpp)
+anova(mod_simple)
 emm <- emmeans(mod_simple, ~ site * habitat * session)
 emm_df <- as.data.frame(emm)
 ggplot() +
@@ -1424,6 +1425,168 @@ ggplot(emm_df, aes(x = session, y = emmean, color = site)) +
 #facet_grid(siteID ~ habitat,
 #scales = "free_x",
 #space = "free_x)
+
+#mod_simple anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+diurnal_gpp$session <- as.factor(diurnal_gpp$session)
+
+# Fit model
+mod_simple <- lmer(
+  f_flux ~ site * habitat * session + (1|replicate),
+  data = diurnal_gpp
+)
+
+# ANOVA
+anova_table <- anova(mod_simple, type = 3)
+
+# Convert to dataframe
+anova_df <- as.data.frame(anova_table)
+
+anova_df$Effect <- rownames(anova_df)
+rownames(anova_df) <- NULL
+
+# Add significance stars
+anova_df <- anova_df %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df <- anova_df %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df <- dplyr::select(
+  anova_df,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table.docx")
+
+# Export CSV
+write.csv(anova_df, "anova_table.csv", row.names = FALSE)
+
+#mod.lmer2 anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+diurnal_gpp$session <- as.factor(diurnal_gpp$session)
+diurnal_gpp$species <- as.factor(diurnal_gpp$species)
+
+# Fit model
+mod.lmer2 <- lmer(f_flux ~site*habitat*species*session + (1|replicate),
+                  data = diurnal_gpp)
+
+# ANOVA
+anova_table2 <- anova(mod.lmer2, type = 3)
+
+# Convert to dataframe
+anova_df2 <- as.data.frame(anova_table2)
+
+anova_df2$Effect <- rownames(anova_df2)
+rownames(anova_df2) <- NULL
+
+# Add significance stars
+anova_df2 <- anova_df2 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df2 <- anova_df2 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df2 <- dplyr::select(
+  anova_df2,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df2) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table2.docx")
+
+# Export CSV
+write.csv(anova_df, "anova_table2.csv", row.names = FALSE)
+
 
 diurnal_combined <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
 diurnal_combined <- diurnal_combined %>%
