@@ -1,0 +1,8 @@
+"Effect","NumDF","DenDF","Sum Sq","Mean Sq","F value","Pr(>F)","Significance"
+"site",3,154.8,908.91,302.97,1.54,0.2061,""
+"habitat",1,153.7,18.69,18.69,0.1,0.7582,""
+"soilmoisture",1,154.9,1.4,1.4,0.01,0.9328,""
+"site:habitat",3,145.9,786.25,262.08,1.33,0.266,""
+"site:soilmoisture",3,153.4,991.05,330.35,1.68,0.1736,""
+"habitat:soilmoisture",1,151.4,263.32,263.32,1.34,0.249,""
+"site:habitat:soilmoisture",3,147.8,321.34,107.11,0.54,0.6524,""

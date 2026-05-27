@@ -1010,6 +1010,8 @@ plot.ndvi <- diurnal_gpp %>%
   geom_jitter()+
   geom_smooth(method = "lm")+
   facet_wrap(~site)
+  #facet_grid(~site, species) bruke den som den er en signifikant effekt
+  #av species, men at effekten er constrained av habitat og site. Site og habitat er sterkeste driverne, appendix med emmans figuren. Greeness Kauto, alle artene representert
 
 plot.ndvi
 
@@ -1028,6 +1030,73 @@ site_names <- c('ly' = "Lygra (coastal)",
 habitats <- c('f' = "Forest",
               'o' = "Open")
 
+plot.ndvi <- diurnal_gpp %>%
+  drop_na(NDVI) %>%
+  ggplot(aes(x=NDVI, 
+             y=f_flux, 
+             colour=habitat,
+             fill=habitat))+
+  geom_jitter()+
+  geom_smooth(method = "lm")+
+  facet_wrap(~site, labeller = as_labeller(site_names)) +
+  scale_fill_manual(values = c("f" ="#854836", #Forest
+                               "o" ="#FFB22C" #Open
+  ),labels= habitats)+
+  scale_colour_manual(values = c("f" ="#854836", #Forest
+                                 "o" ="#FFB22C" #Open
+  ),labels=habitats)+
+  
+  theme_bw()+
+  theme(
+    strip.text = element_text(size = 12),
+    strip.background = element_blank()
+  ) +
+  labs(x = expression(NDVI ~ "(Normalized Difference Vegetation Index)"),
+       y=expression("GPP (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"),
+       color= "",
+       fill="")+
+  
+  # Publication theme
+  theme_bw(base_size = 14) +
+  
+  theme(
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    
+    axis.text = element_text(
+      size = 13,
+      color = "black"
+    ),
+    
+    legend.title = element_blank(),
+    
+    legend.text = element_text(
+      size = 12
+    ),
+    
+    legend.position = "right",
+    
+    panel.border = element_rect(
+      linewidth = 0.8,
+      color = "black"
+    )
+  )
+
+plot.ndvi
+
+ggsave("gpp_ndvi.png",
+       width = 10,
+       height = 6,
+       dpi = 300)
+#facet_grid(~site, species) bruke den som den er en signifikant effekt
+#av species, men at effekten er constrained av habitat og site. Site og habitat er sterkeste driverne, appendix med emmans figuren. Greeness Kauto, alle artene representert
 
 plot.soilmoist <- diurnal_gpp %>%
   drop_na(soilmoisture) %>%
@@ -1050,21 +1119,54 @@ plot.soilmoist <- diurnal_gpp %>%
     strip.text = element_text(size = 12),
     strip.background = element_blank()
   ) +
-  labs(x= "Soil moisture (%)",
-       y="GPP (Gross Primary Productivity)",
+  labs(x=expression("Soil moisture (%)"),
+       y=expression("GPP (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"),
        color= "",
-       fill="")
+       fill="")+
+  
+  # Publication theme
+  theme_bw(base_size = 14) +
+  
+  theme(
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    
+    axis.text = element_text(
+      size = 13,
+      color = "black"
+    ),
+    
+    legend.title = element_blank(),
+    
+    legend.text = element_text(
+      size = 12
+    ),
+    
+    legend.position = "right",
+    
+    panel.border = element_rect(
+      linewidth = 0.8,
+      color = "black"
+    )
+  )
 
 plot.soilmoist
 
 ggsave("gpp_soilmoist_site_habitat.png",
-       width = 7,
+       width = 10,
        height = 6,
        dpi = 300)
 
 plot.PAR <- diurnal_gpp %>%
   drop_na(PAR) %>%
-  ggplot(aes(x=PAR, y=f_flux, colour=habitat))+
+  ggplot(aes(x=PAR, y=f_flux, colour=habitat, fill=habitat))+
   geom_jitter()+
   geom_smooth(method = "lm")+
   facet_wrap(~site, labeller = as_labeller(site_names)) +
@@ -1080,16 +1182,48 @@ plot.PAR <- diurnal_gpp %>%
     strip.text = element_text(size = 12),
     strip.background = element_blank()
   ) +
-  labs(x= "PAR (Photosynthetic Active Radiation)",
-       y="GPP (Gross Primary Productivity)",
+  labs(x = expression(PAR ~ "(" * mu * "mol photons m"^{-2} * " s"^{-1} * ")"),
+       y=expression("GPP (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"),
        color= "",
-       fill="")
+       fill="")+
+  
+  # Publication theme
+  theme_bw(base_size = 14) +
+  
+  theme(
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    
+    axis.text = element_text(
+      size = 13,
+      color = "black"
+    ),
+    
+    legend.title = element_blank(),
+    
+    legend.text = element_text(
+      size = 12
+    ),
+    
+    legend.position = "right",
+    
+    panel.border = element_rect(
+      linewidth = 0.8,
+      color = "black"
+    )
+  )
 
 plot.PAR
 
-
 ggsave("plot.PAR.png",
-       width = 7,
+       width = 10,
        height = 6,
        dpi = 300)
 
@@ -1193,6 +1327,144 @@ ggsave("plot_gpp.png",
        dpi = 300)
 
 
+# Fit model plot_gpp2
+mod2.lmer <- lmer(
+  f_flux ~ site * habitat * species + (1|replicate),
+  data = diurnal_gpp
+)
+
+# Estimated marginal means
+emm_species <- emmeans(mod2.lmer, ~ habitat * species * site)
+
+# Convert to dataframe
+emm_species_df <- as.data.frame(emm_species)
+diurnal_gpp$site <- factor(
+  diurnal_gpp$site,
+  levels = c(
+    "se",
+    "ka",
+    "ly",
+    "so"
+  )
+)
+# Plot_gpp2
+plot_gpp2 <- ggplot() +
+  # Raw data points
+  geom_point(
+    data = diurnal_gpp %>% filter(type == "GPP"),
+    aes(x = habitat,
+        y = f_flux,
+        color = species),
+    alpha = 0.2,
+    position = position_jitter(width = 0.15),
+    size = 2
+  ) +
+  # Model estimated means
+  geom_point(
+    data = emm_species_df,
+    aes(x = habitat,
+        y = emmean,
+        color = species),
+    position = position_dodge(width = 0.4),
+    size = 3
+  ) +
+  # Error bars
+  geom_errorbar(
+    data = emm_species_df,
+    aes(x = habitat,
+        ymin = emmean - SE,
+        ymax = emmean + SE,
+        color = species),
+    position = position_dodge(width = 0.4),
+    width = 0.2
+  ) +
+  # Facets
+  facet_wrap(~site, labeller = as_labeller(site_names)) +
+  # Species colours
+  scale_color_manual(
+    values = c(
+      "cv" = "#f768a1",
+      "en" = "#238b45",
+      "vm" = "#225ea8",
+      "vv" = "#d7301f"
+    ),
+    labels = c(
+      "cv" = expression(italic("Calluna vulgaris")),
+      "en" = expression(italic("Empetrum nigrum")),
+      "vm" = expression(italic("Vaccinium myrtillus")),
+      "vv" = expression(italic("Vaccinium vitis-idaea"))
+    )
+  ) +
+  # Habitat labels
+  scale_x_discrete(
+    labels = c(
+      "f" = "Forest",
+      "o" = "Open"
+    )
+  ) +
+  
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 12),
+    strip.background = element_blank()
+  ) +
+  
+  labs(
+    x = expression("Habitat"),
+    y = expression(
+      "GPP (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"
+    ),
+    color = NULL
+  ) +
+  
+  # Publication theme
+  theme_bw(base_size = 14) +
+  
+  theme(
+    panel.grid = element_blank(),
+    
+    strip.background = element_blank(),
+    
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    
+    axis.text = element_text(
+      size = 13,
+      color = "black"
+    ),
+    
+    legend.title = element_blank(),
+    
+    legend.text = element_text(
+      size = 12
+    ),
+    
+    legend.position = "right",
+    
+    panel.border = element_rect(
+      linewidth = 0.8,
+      color = "black"
+    )
+  )
+
+plot_gpp2
+
+ggsave(
+  "plot_gpp2.png",
+  plot_gpp2,
+  width = 10,
+  height = 6,
+  dpi = 600
+)
+
+
 diurnal_nee <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
 diurnal_nee <- diurnal_nee %>%
   filter(type == "NEE") |> 
@@ -1217,6 +1489,7 @@ diurnal_nee <- diurnal_nee %>%
   mutate(replicate = paste0(species, "_", rep_num)) %>%
   select(-part1, -part2, -part5, -rep_num)
 
+diurnal_nee$session <- as.numeric(as.character(diurnal_nee$session))
 plot_session <- diurnal_nee %>%
   # filter(type == "GPP") %>%
   ggplot(aes(x = session, y = f_flux, color = site, linetype = habitat)) +
@@ -1246,19 +1519,50 @@ plot_session <- diurnal_nee %>%
     breaks = c(1, 2, 3, 4),
     labels = c("Morning", "Midday", "Evening", "Night")
   ) +
-  labs(x= "session",
-       y="NEE (Net Ecosystem Exchange)",
+  labs(x= expression("Diurnal session"),
+       y=expression(
+         "NEE (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"),
        color= "",
-       fill="")
+       fill="")+
+  theme_bw(base_size = 14) +
+  theme(
+    
+    axis.title = element_text(size = 15, face = "bold"),
+    axis.text = element_text(size = 13, color = "black"),
+    
+    strip.background = element_blank(),
+    strip.text = element_text(size = 14, face = "bold"),
+    
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12),
+    
+    panel.border = element_rect(linewidth = 0.8, color = "black")
+  )
 plot_session
 
 ggsave("plot_session.png",
-       width = 14,
+       width = 10,
        height = 6,
        dpi = 300)
 
+
 mod.lm <- lm(f_flux ~site*habitat*session, data = diurnal_gpp)
 anova(mod.lm)
+
+#significance nee, found a signifcant effect of site, habitat and session (p<0,005)
+mod.lmernee <- lmer(f_flux ~site*habitat*session + (1|replicate),
+                    data = diurnal_nee)
+anova(mod.lmernee)
+
+diurnal_nee$session <- as.factor(diurnal_nee$session)
+plot_emmnee <- emmeans(mod.lmernee, ~ site*habitat*session)
+plot(plot_emmnee)
+
+ggsave("plot_emmnee.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
 
 #legg inn species og replicate så du kan bruke i mod.lmer, legg in emmeans for å teste ting mot hverandre
 #plot som følger sessions på x akse, gpp på y akse. Forskjell mellom sites. Kan splitte opp for site og habitat og ha alle sammen
@@ -1273,6 +1577,18 @@ anova(mod.lmer)
 mod2.lm <- lm(f_flux ~site, data = diurnal_gpp)
 anova(mod2.lm)
 
+#significance figure 2
+mod2.lmer <- lmer(f_flux ~site*habitat*species + (1|replicate),
+                  data = diurnal_gpp)
+anova(mod2.lmer)
+plot_emm2 <- emmeans(mod2.lmer, ~ site*habitat*species)
+plot(plot_emm2)
+
+ggsave("plot_emm2.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
 mod2.lm <- lm(f_flux ~site *habitat*species, data = diurnal_gpp)
 anova(mod2.lm)
 
@@ -1281,10 +1597,64 @@ anova(mod2.lm)
 
 mod_simple <- lmer(f_flux ~ site * habitat * session + (1|replicate),
                    data = diurnal_gpp)
+plot_emmsimple <- emmeans(mod_simple, ~ site*habitat*session)
+plot(plot_emmsimple)
 
+ggsave("plot_emmsimple.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+#significance soilmoisture and PAR
 mod.lmer3 <- lmer(f_flux ~ PAR*soilmoisture*habitat*site + (1|replicate),
                   data = diurnal_gpp)
 anova(mod.lmer3)
+
+mod.lmerpar <- lmer(f_flux ~ PAR*habitat*site + (1|replicate),
+                    data = diurnal_gpp)
+anova(mod.lmerpar)
+plot_emmpar <- emmeans(mod.lmerpar, ~ site*habitat*PAR)
+plot(plot_emmpar)
+
+ggsave("plot_emmpar.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+mod.lmersoil <- lmer(f_flux ~ site*habitat*soilmoisture + (1|replicate),
+                     data = diurnal_gpp)
+anova(mod.lmersoil)
+plot_emmsoil <- emmeans(mod.lmersoil, ~ site*habitat*soilmoisture)
+plot(plot_emmsoil)
+
+ggsave("plot_emmsoil.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+#significance NDVI
+mod.lmerndvi <- lmer(NDVI ~ site*habitat*species + (1|replicate),
+                     data = diurnal_gpp)
+anova(mod.lmerndvi)
+plot_emmndvi <- emmeans(mod.lmerndvi, ~ site*habitat*species)
+plot(plot_emmndvi)
+
+ggsave("plot_emmndvi.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+mod.lmerndvi2 <- lmer(f_flux ~ site*habitat*NDVI + (1|replicate),
+                      data = diurnal_gpp)
+anova(mod.lmerndvi2)
+plot_emmndvi2 <- emmeans(mod.lmerndvi2, ~ site*habitat*NDVI)
+plot(plot_emmndvi2)
+
+ggsave("plot_emmndvi2.png",
+       width = 8,
+       height = 6,
+       dpi = 300)
+
 anova(mod_simple)
 
 #mod_simple table
@@ -1341,7 +1711,7 @@ ggplot(diurnal_gpp %>% drop_na(PAR),
        colour = "Habitat")
 
 
-#mod_simple figure attempt
+#mod_simple figure attempt posthoc test
 diurnal_gpp$session <- as.factor(diurnal_gpp$session)
 options(contrasts = c("contr.sum", "contr.poly"))
 mod_simple <- lmer(f_flux ~ site * habitat * session + (1|replicate),
@@ -1381,14 +1751,52 @@ ggplot() +
     breaks = c(1, 2, 3, 4),
     labels = c("Morning", "Midday", "Evening", "Night")
   ) +
-  labs(x= "session",
-       y="GPP (Gross Primary Productivity)",
+  labs(x= expression ("Diurnal session"),
+       y=expression(
+         "GPP (" * mu * "mol CO"[2] * " m"^{-2} * " s"^{-1} * ")"),
        color= "",
-       fill="")
+       fill="")+
+  
+  # Publication theme
+  theme_bw(base_size = 14) +
+  
+  theme(
+    panel.grid = element_blank(),
+    
+    strip.background = element_blank(),
+    
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    
+    axis.title = element_text(
+      size = 15,
+      face = "bold"
+    ),
+    
+    axis.text = element_text(
+      size = 13,
+      color = "black"
+    ),
+    
+    legend.title = element_blank(),
+    
+    legend.text = element_text(
+      size = 12
+    ),
+    
+    legend.position = "right",
+    
+    panel.border = element_rect(
+      linewidth = 0.8,
+      color = "black"
+    )
+  )
   #facet_wrap(~ site) +
   #theme_bw()
 ggsave("mod_simple_figure.png",
-       width = 8,
+       width = 10,
        height = 6,
        dpi = 300)
 
@@ -1587,6 +1995,476 @@ print(doc, target = "anova_table2.docx")
 # Export CSV
 write.csv(anova_df, "anova_table2.csv", row.names = FALSE)
 
+#mod.lmerndvi anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+diurnal_gpp$species <- as.factor(diurnal_gpp$species)
+
+# Fit model
+mod.lmerndvi <- lmer(NDVI ~ site*habitat*species + (1|replicate),
+                     data = diurnal_gpp)
+
+# ANOVA
+anova_table3 <- anova(mod.lmerndvi, type = 3)
+
+# Convert to dataframe
+anova_df3 <- as.data.frame(anova_table3)
+
+anova_df3$Effect <- rownames(anova_df3)
+rownames(anova_df3) <- NULL
+
+# Add significance stars
+anova_df3 <- anova_df3 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df3 <- anova_df3 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df3 <- dplyr::select(
+  anova_df3,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df3) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table3.docx")
+
+# Export CSV
+write.csv(anova_df3, "anova_table3.csv", row.names = FALSE)
+
+#mod.lmersoil anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+
+# Fit model
+mod.lmersoil <- lmer(f_flux ~ site*habitat*soilmoisture + (1|replicate),
+                     data = diurnal_gpp)
+
+# ANOVA
+anova_table4 <- anova(mod.lmersoil, type = 3)
+
+# Convert to dataframe
+anova_df4 <- as.data.frame(anova_table4)
+
+anova_df4$Effect <- rownames(anova_df4)
+rownames(anova_df4) <- NULL
+
+# Add significance stars
+anova_df4 <- anova_df4 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df4 <- anova_df4 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df4 <- dplyr::select(
+  anova_df4,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df4) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table4.docx")
+
+# Export CSV
+write.csv(anova_df4, "anova_table4.csv", row.names = FALSE)
+
+#mod.lmerpar anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+
+# Fit model
+mod.lmerpar <- lmer(f_flux ~ site*habitat*PAR + (1|replicate),
+                    data = diurnal_gpp)
+
+# ANOVA
+anova_table5 <- anova(mod.lmerpar, type = 3)
+
+# Convert to dataframe
+anova_df5 <- as.data.frame(anova_table5)
+
+anova_df5$Effect <- rownames(anova_df5)
+rownames(anova_df5) <- NULL
+
+# Add significance stars
+anova_df5 <- anova_df5 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df5 <- anova_df5 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df5 <- dplyr::select(
+  anova_df5,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df5) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table5.docx")
+
+# Export CSV
+write.csv(anova_df5, "anova_table5.csv", row.names = FALSE)
+
+#mod2.lmer anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+diurnal_gpp$species <- as.factor(diurnal_gpp$species)
+
+# Fit model
+mod2.lmer <- lmer(f_flux ~site*habitat*species + (1|replicate),
+                  data = diurnal_gpp)
+
+# ANOVA
+anova_table6 <- anova(mod2.lmer, type = 3)
+
+# Convert to dataframe
+anova_df6 <- as.data.frame(anova_table6)
+
+anova_df6$Effect <- rownames(anova_df6)
+rownames(anova_df6) <- NULL
+
+# Add significance stars
+anova_df6 <- anova_df6 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df6 <- anova_df6 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df6 <- dplyr::select(
+  anova_df6,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df6) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table6.docx")
+
+# Export CSV
+write.csv(anova_df6, "anova_table6.csv", row.names = FALSE)
+
+#mod.lmernee anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+diurnal_gpp$session <- as.factor(diurnal_gpp$session)
+
+# Fit model
+mod.lmernee <- lmer(f_flux ~site*habitat*session + (1|replicate),
+                    data = diurnal_nee)
+
+# ANOVA
+anova_table7 <- anova(mod.lmernee, type = 3)
+
+# Convert to dataframe
+anova_df7 <- as.data.frame(anova_table7)
+
+anova_df7$Effect <- rownames(anova_df7)
+rownames(anova_df7) <- NULL
+
+# Add significance stars
+anova_df7 <- anova_df7 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df7 <- anova_df7 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df7 <- dplyr::select(
+  anova_df7,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df7) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table7.docx")
+
+# Export CSV
+write.csv(anova_df7, "anova_table7.csv", row.names = FALSE)
+
+#mod.lmerndvi2 anova table
+library(lme4)
+library(lmerTest)
+library(dplyr)
+library(flextable)
+library(officer)
+
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# Make variables factors
+diurnal_gpp$site <- as.factor(diurnal_gpp$site)
+diurnal_gpp$habitat <- as.factor(diurnal_gpp$habitat)
+
+# Fit model
+mod.lmerndvi2 <- lmer(f_flux ~ site*habitat*NDVI + (1|replicate),
+                      data = diurnal_gpp)
+
+# ANOVA
+anova_table8 <- anova(mod.lmerndvi2, type = 3)
+
+# Convert to dataframe
+anova_df8 <- as.data.frame(anova_table8)
+
+anova_df8$Effect <- rownames(anova_df8)
+rownames(anova_df8) <- NULL
+
+# Add significance stars
+anova_df8 <- anova_df8 %>%
+  dplyr::mutate(
+    Significance = dplyr::case_when(
+      `Pr(>F)` < 0.001 ~ "***",
+      `Pr(>F)` < 0.01  ~ "**",
+      `Pr(>F)` < 0.05  ~ "*",
+      `Pr(>F)` < 0.1   ~ ".",
+      TRUE ~ ""
+    )
+  )
+
+# Round values
+anova_df8 <- anova_df8 %>%
+  dplyr::mutate(
+    `Sum Sq` = round(`Sum Sq`, 2),
+    `Mean Sq` = round(`Mean Sq`, 2),
+    `F value` = round(`F value`, 2),
+    `Pr(>F)` = round(`Pr(>F)`, 4),
+    DenDF = round(DenDF, 1)
+  )
+
+# Select columns
+anova_df8 <- dplyr::select(
+  anova_df8,
+  Effect,
+  NumDF,
+  DenDF,
+  `Sum Sq`,
+  `Mean Sq`,
+  `F value`,
+  `Pr(>F)`,
+  Significance
+)
+
+# Create flextable
+ft <- flextable(anova_df8) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  theme_booktabs() %>%
+  bold(part = "header")
+
+# Export Word document
+doc <- read_docx() %>%
+  body_add_par("Type III ANOVA for mixed-effects model", style = "heading 1") %>%
+  body_add_flextable(ft)
+
+print(doc, target = "anova_table8.docx")
+
+# Export CSV
+write.csv(anova_df8, "anova_table8.csv", row.names = FALSE)
 
 diurnal_combined <- bind_rows(gpp_lygra, gpp_sogndal, gpp_senja, gpp_kauto)
 diurnal_combined <- diurnal_combined %>%
